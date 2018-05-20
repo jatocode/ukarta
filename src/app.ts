@@ -5,7 +5,7 @@ import DragControls from 'three-dragcontrols';
 import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
 
 export class App {
-  message = 'Ugnskarta';
+  message = 'Det här är en ugn';
   ugnsKartaWidth = 800;
   ugnsKartaHeight = 400;
   renderer:WebGLRenderer;
@@ -18,8 +18,6 @@ export class App {
   scale: number = 0.01;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
-  
-  //https://github.com/selbyk/three.ts/blob/master/src/cube.ts
   
   attached() {
     this.init();
@@ -59,16 +57,15 @@ export class App {
     // light
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
- /*   
-    this.cube = App.createCube(20,2,2);
-    this.meshObjectsInUgn.push(this.cube);
-    // create a cube and add it to the scene
-    this.scene.add(this.cube);
-*/
-    var ind = this.createIndividMesh(4000,400,500,false);
+
+    var ind = this.createIndividMesh(3000,400,500,false);
     this.meshObjectsInUgn.push(ind);
     this.scene.add(ind);
     
+    var cyl = this.createIndividMesh(4000,200,200,true);
+    this.meshObjectsInUgn.push(cyl);
+    this.scene.add(cyl);
+
     this.addEventListenersForIndivids();
     this.createUgnBox();
     
@@ -93,9 +90,7 @@ export class App {
   private animateUgnsKarta = () => {
     var me = this;
     me.renderer.render(me.scene, me.camera);
-    
-    
-    
+       
     // me.physicsSimulation(me.meshObjectsInUgn);
     // me.animationFrameId= requestAnimationFrame(me.animateUgnsKarta);
     
@@ -180,7 +175,7 @@ export class App {
   */
 //  private createIndividMesh(individOperation: Contract.IndividOperation) {
   private createIndividMesh(l, b, h, rund) {
-      var me = this;
+    var me = this;
     var individBox;
     var individOperation = { Bredd: b, Langd: l, Hojd: h, IsRunt: rund}
     
