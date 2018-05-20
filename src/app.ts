@@ -74,28 +74,12 @@ export class App {
     
     
   }
-  
-  static createCube(width = 1, height = 1, depth = 1) {
-    let geometry = new THREE.BoxGeometry(width, height, depth);
-    let material = new THREE.MeshNormalMaterial();
-    return new THREE.Mesh(geometry, material);
-  }
-  
+
   public render = () => {
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render);
   }
-  
-  
-  private animateUgnsKarta = () => {
-    var me = this;
-    me.renderer.render(me.scene, me.camera);
-       
-    // me.physicsSimulation(me.meshObjectsInUgn);
-    // me.animationFrameId= requestAnimationFrame(me.animateUgnsKarta);
-    
-  };
-  
+
   private createUgnBox = () => {
     var me = this;
     
