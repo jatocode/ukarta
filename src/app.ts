@@ -4,6 +4,7 @@ import DragControls from 'three-dragcontrols';
 //import "three/examples/js/Detector";
 import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
 
+
 export class App {
   message = 'Det här är en ugn';
   ugnsKartaWidth = 800;
