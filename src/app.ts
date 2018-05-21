@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon';
 import OrbitControls from 'three-orbitcontrols';
 import DragControls from 'three-dragcontrols';
-//import "three/examples/js/Detector";
 import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
 
 
@@ -73,6 +73,10 @@ export class App {
     var axesHelper = new THREE.AxesHelper(5);
     this.scene.add(axesHelper);
     
+
+    // Cannon test
+    var world = new CANNON.World();
+    world.gravity.set(0, 0, -9.82); // m/s²
     
   }
 
