@@ -18,8 +18,9 @@ export class App {
   controls:OrbitControls;
   ugnscanvas;
   mesh: THREE.Mesh;
+  cylmesh: THREE.Mesh;
   ugnMesh: THREE.Mesh;
-  scale: number = 0.01;
+  contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
   
@@ -45,9 +46,9 @@ export class App {
     // camera
     
     this.camera = new THREE.PerspectiveCamera(45, this.ugnsKartaWidth / this.ugnsKartaHeight,1, 1000);
-    this.camera.position.x = 42;
-    this.camera.position.y = 10;
-    this.camera.position.z = 1;
+    this.camera.position.x = 5;
+    this.camera.position.y = 5;
+    this.camera.position.z = 5;
     this.camera.lookAt(this.scene.position);
     this.scene.add(this.camera); // required, since adding light as child of camera
     
@@ -64,21 +65,25 @@ export class App {
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
 
-    var beam = this.createIndividMesh(3000,400,500,false);
-    beam.position.x = 3;
-    beam.position.y = -5;
-    beam.position.z = -10;
+    this.createUgnBox();
+
+    var beam = this.createIndividMesh(5.2,1.0,0.4,false);
+    beam.position.x = -2.5 + 0.5 + 0.1;
+    beam.position.y = -1.0 + 0.2 + 0.1;
+    beam.position.z = 0;
     this.meshObjectsInUgn.push(beam);
     this.scene.add(beam);
     this.mesh = beam;
     
-    var cyl = this.createIndividMesh(4000,1400,200,true);
-    cyl.position.z = -10;
+    var cyl = this.createIndividMesh(3.0,1.0,0.4,true);
+    cyl.position.x = -2.5 + 2.5 + 0.1;
+    cyl.position.y = -1.0 + 0.4 + 0.1;
+    cyl.position.z = 1.0;
     this.meshObjectsInUgn.push(cyl);
     this.scene.add(cyl);
+    this.cylmesh = cyl;
 
     this.addEventListenersForIndivids();
-    this.createUgnBox();
     
     var axesHelper = new THREE.AxesHelper(5);
     this.scene.add(axesHelper);
@@ -100,43 +105,50 @@ export class App {
     // Step the physics world
     this.world.step(this.timeStep);
     // Copy coordinates from Cannon.js to Three.js
-    //this.mesh.position.copy(this.body.position);
-    //this.mesh.quaternion.copy(this.body.quaternion);
-    
+    this.mesh.position.copy(this.body.position);
+    this.mesh.quaternion.copy(this.body.quaternion);
+    this.cylmesh.position.copy(this.body2.position);
+    this.cylmesh.quaternion.copy(this.body2.quaternion);
     // Three styr position
-    this.body.position.copy(this.mesh.position);
-    this.body.quaternion.copy(this.mesh.quaternion);
+    //this.body.position.copy(this.mesh.position);
+    //this.body.quaternion.copy(this.mesh.quaternion);
 
+    //this.body2.position.copy(this.cylmesh.position);
+    //this.body2.quaternion.copy(this.cylmesh.quaternion);
 }
 
  public initCannon = () => {
     this.world = new CANNON.World();
-    this.world.gravity.set(-9.82,0,0);
+    this.world.gravity.set(0,-9.82,0);
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.solver.iterations = 1;
 
     this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
     this.world.defaultContactMaterial.contactEquationRelaxation = 10;
-    var shape = new CANNON.Box(new CANNON.Vec3(1500,200,250)); // Halfvector
-    this.body = new CANNON.Body({
-      mass: 1
-    });
+    var shape = new CANNON.Box(new CANNON.Vec3(5.2,1.0,0.4)); // Halfvector
+    this.body = new CANNON.Body({ mass: 1 });
     this.body.addShape(shape);
     this.body.angularVelocity.set(0,0,0);
-    this.body.angularDamping = 0.5;
+    this.body.velocity.set(0,0,0);
+    this.body.angularDamping = 0;
     this.world.addBody(this.body);
 
-    var shape2 = new CANNON.Box(new CANNON.Vec3(1500,200,250)); // Halfvector
-    this.body2 = new CANNON.Body({
-      mass: 1
-    });
-    this.body2.addShape(shape);
+    var shape2 = new CANNON.Box(new CANNON.Vec3(3.0,1.0,0.4)); // Halfvector
+    this.body2 = new CANNON.Body({ mass: 1 });
+    this.body2.addShape(shape2);
     this.body2.angularVelocity.set(0,0,0);
+    this.body2.velocity.set(0,0,0);
     this.body2.angularDamping = 0.5;
     this.world.addBody(this.body2);
 
+    var groundShape = new CANNON.Plane();
+    var groundBody = new CANNON.Body({
+        mass: 0
+    });
+    groundBody.addShape(groundShape);
+    this.world.addBody(groundBody);
 
-    this.body.addEventListener("collide",function(e){
+    this.body2.addEventListener("collide",function(e){
       console.log("The sphere just collided with the ground!");
       console.log("Collided with body:",e.body);
       console.log("Contact between bodies:",e.contact);
@@ -146,9 +158,9 @@ export class App {
   private createUgnBox = () => {
     var me = this;
     
-    var ugnWidth = 5000;
-    var ugnHeight = 2000;
-    var ugnLength = 7000;
+    var ugnWidth = 5;
+    var ugnHeight = 2;
+    var ugnLength = 7;
     
     var defaultMaterial = new THREE.MeshPhongMaterial({
       color: 0xffffff,
@@ -177,7 +189,7 @@ export class App {
     
     // mesh
     me.ugnMesh = new THREE.Mesh(ugnBox, (<any>materials));
-    me.ugnMesh.scale.set(me.scale, me.scale, me.scale);
+    //me.ugnMesh.scale.set(me.scale, me.scale, me.scale);
     
     me.scene.add(me.ugnMesh);
     
@@ -227,19 +239,19 @@ export class App {
     var individOperation = { Bredd: b, Langd: l, Hojd: h, IsRunt: rund}
     
     if (individOperation.IsRunt) {
-      let shape = new THREE.Shape();
+      // let shape = new THREE.Shape();
 
-      shape.lineTo(individOperation.Bredd, 0);
-      shape.lineTo(individOperation.Bredd/2, individOperation.Hojd);
-      shape.lineTo(0, 0);
+      // shape.lineTo(individOperation.Bredd, 0);
+      // shape.lineTo(individOperation.Bredd/2, individOperation.Hojd);
+      // shape.lineTo(0, 0);
 
-      individBox = new THREE.ExtrudeGeometry(shape, {
-          bevelEnabled: false,
-          amount:  individOperation.Langd
-      }); 
+      // individBox = new THREE.ExtrudeGeometry(shape, {
+      //     bevelEnabled: false,
+      //     amount: individOperation.Langd
+      // }); 
 
-     // individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 3);
-     // individBox.rotateY(THREE.Math.degToRad(90)); //börja med geometrin liggandes
+      individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 50);
+      individBox.rotateX(THREE.Math.degToRad(90)); //börja med geometrin liggandes
     }
     else {
       // geometry
@@ -255,7 +267,7 @@ export class App {
     
     // mesh
     var individMesh = new THREE.Mesh(individBox, material);
-    individMesh.scale.set(me.scale, me.scale, me.scale);
+    //individMesh.scale.set(me.scale, me.scale, me.scale);
     
     return individMesh;
   }
