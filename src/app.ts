@@ -12,6 +12,7 @@ export class App {
   scene:Scene;
   world:CANNON.World;
   body;
+  body2;
   timeStep: number = 1/60;
   camera:PerspectiveCamera;
   controls:OrbitControls;
@@ -25,8 +26,8 @@ export class App {
   attached() {
     this.init();
     this.initCannon();
-    //this.animate();
-    this.render();
+    this.animate();
+    //this.render();
   }
   
   public init = () => {
@@ -51,7 +52,7 @@ export class App {
     this.scene.add(this.camera); // required, since adding light as child of camera
     
     // controls - rotation av ugnen
-    this.controls = new OrbitControls(this.camera);
+    this.controls = new OrbitControls(this.camera, this.ugnscanvas);
     this.controls.enableZoom = true;
     this.controls.enablePan = false;
     this.controls.maxPolarAngle = Math.PI / 2;
@@ -64,11 +65,15 @@ export class App {
     this.camera.add(light);
 
     var beam = this.createIndividMesh(3000,400,500,false);
-    //this.meshObjectsInUgn.push(beam);
-    //this.scene.add(beam);
+    beam.position.x = 3;
+    beam.position.y = -5;
+    beam.position.z = -10;
+    this.meshObjectsInUgn.push(beam);
+    this.scene.add(beam);
     this.mesh = beam;
     
-    var cyl = this.createIndividMesh(4000,1000,500,true);
+    var cyl = this.createIndividMesh(4000,1400,200,true);
+    cyl.position.z = -10;
     this.meshObjectsInUgn.push(cyl);
     this.scene.add(cyl);
 
@@ -82,7 +87,7 @@ export class App {
 
   public render = () => {
     this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(this.render);
+   // requestAnimationFrame(this.render);
   }
 
   public animate = () => {
@@ -95,15 +100,23 @@ export class App {
     // Step the physics world
     this.world.step(this.timeStep);
     // Copy coordinates from Cannon.js to Three.js
-    this.mesh.position.copy(this.body.position);
-    this.mesh.quaternion.copy(this.body.quaternion);
+    //this.mesh.position.copy(this.body.position);
+    //this.mesh.quaternion.copy(this.body.quaternion);
+    
+    // Three styr position
+    this.body.position.copy(this.mesh.position);
+    this.body.quaternion.copy(this.mesh.quaternion);
+
 }
 
  public initCannon = () => {
     this.world = new CANNON.World();
-    this.world.gravity.set(0,0,0);
+    this.world.gravity.set(-9.82,0,0);
     this.world.broadphase = new CANNON.NaiveBroadphase();
-    this.world.solver.iterations = 10;
+    this.world.solver.iterations = 1;
+
+    this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
+    this.world.defaultContactMaterial.contactEquationRelaxation = 10;
     var shape = new CANNON.Box(new CANNON.Vec3(1500,200,250)); // Halfvector
     this.body = new CANNON.Body({
       mass: 1
@@ -112,6 +125,22 @@ export class App {
     this.body.angularVelocity.set(0,0,0);
     this.body.angularDamping = 0.5;
     this.world.addBody(this.body);
+
+    var shape2 = new CANNON.Box(new CANNON.Vec3(1500,200,250)); // Halfvector
+    this.body2 = new CANNON.Body({
+      mass: 1
+    });
+    this.body2.addShape(shape);
+    this.body2.angularVelocity.set(0,0,0);
+    this.body2.angularDamping = 0.5;
+    this.world.addBody(this.body2);
+
+
+    this.body.addEventListener("collide",function(e){
+      console.log("The sphere just collided with the ground!");
+      console.log("Collided with body:",e.body);
+      console.log("Contact between bodies:",e.contact);
+  });
 
 }
   private createUgnBox = () => {
@@ -235,7 +264,7 @@ export class App {
     var me = this;
     //me.removeEventListenersForIndivids();
     
-    me.dragControls = new DragControls(me.meshObjectsInUgn, me.camera, me.renderer.domElement);
+    me.dragControls = new DragControls(me.meshObjectsInUgn, me.camera, me.ugnscanvas);
     me.dragControls.addEventListener('dragstart', function (e) { me.moveStartCallback(e, me); });
    // me.dragControls.addEventListener('drag', me.moveCallback);
    // me.dragControls.addEventListener('dragend', me.moveEndCallback);
