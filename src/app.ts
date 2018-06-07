@@ -4,17 +4,19 @@ import OrbitControls from 'three-orbitcontrols';
 import DragControls from 'three-dragcontrols';
 import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
 
-
 export class App {
   message = 'Det här är en ugn';
   ugnsKartaWidth = 800;
   ugnsKartaHeight = 400;
   renderer:WebGLRenderer;
   scene:Scene;
+  world:CANNON.World;
+  body;
+  timeStep: number = 1/60;
   camera:PerspectiveCamera;
   controls:OrbitControls;
   ugnscanvas;
-  cube: THREE.Mesh;
+  mesh: THREE.Mesh;
   ugnMesh: THREE.Mesh;
   scale: number = 0.01;
   public dragControls;
@@ -22,6 +24,8 @@ export class App {
   
   attached() {
     this.init();
+    this.initCannon();
+    //this.animate();
     this.render();
   }
   
@@ -59,11 +63,12 @@ export class App {
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
 
-    var ind = this.createIndividMesh(3000,400,500,false);
-    this.meshObjectsInUgn.push(ind);
-    this.scene.add(ind);
+    var beam = this.createIndividMesh(3000,400,500,false);
+    //this.meshObjectsInUgn.push(beam);
+    //this.scene.add(beam);
+    this.mesh = beam;
     
-    var cyl = this.createIndividMesh(4000,200,200,true);
+    var cyl = this.createIndividMesh(4000,1000,500,true);
     this.meshObjectsInUgn.push(cyl);
     this.scene.add(cyl);
 
@@ -73,11 +78,6 @@ export class App {
     var axesHelper = new THREE.AxesHelper(5);
     this.scene.add(axesHelper);
     
-
-    // Cannon test
-    var world = new CANNON.World();
-    world.gravity.set(0, 0, -9.82); // m/s²
-    
   }
 
   public render = () => {
@@ -85,6 +85,35 @@ export class App {
     requestAnimationFrame(this.render);
   }
 
+  public animate = () => {
+    requestAnimationFrame( this.animate );
+    this.updatePhysics();
+    this.render();
+  }
+
+  public updatePhysics = () => {
+    // Step the physics world
+    this.world.step(this.timeStep);
+    // Copy coordinates from Cannon.js to Three.js
+    this.mesh.position.copy(this.body.position);
+    this.mesh.quaternion.copy(this.body.quaternion);
+}
+
+ public initCannon = () => {
+    this.world = new CANNON.World();
+    this.world.gravity.set(0,0,0);
+    this.world.broadphase = new CANNON.NaiveBroadphase();
+    this.world.solver.iterations = 10;
+    var shape = new CANNON.Box(new CANNON.Vec3(1500,200,250)); // Halfvector
+    this.body = new CANNON.Body({
+      mass: 1
+    });
+    this.body.addShape(shape);
+    this.body.angularVelocity.set(0,0,0);
+    this.body.angularDamping = 0.5;
+    this.world.addBody(this.body);
+
+}
   private createUgnBox = () => {
     var me = this;
     
@@ -169,15 +198,26 @@ export class App {
     var individOperation = { Bredd: b, Langd: l, Hojd: h, IsRunt: rund}
     
     if (individOperation.IsRunt) {
-      individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 20);
-      individBox.rotateX(THREE.Math.degToRad(90)); //börja med geometrin liggandes
+      let shape = new THREE.Shape();
+
+      shape.lineTo(individOperation.Bredd, 0);
+      shape.lineTo(individOperation.Bredd/2, individOperation.Hojd);
+      shape.lineTo(0, 0);
+
+      individBox = new THREE.ExtrudeGeometry(shape, {
+          bevelEnabled: false,
+          amount:  individOperation.Langd
+      }); 
+
+     // individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 3);
+     // individBox.rotateY(THREE.Math.degToRad(90)); //börja med geometrin liggandes
     }
     else {
       // geometry
       individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Hojd, individOperation.Langd);
     }
     
-    individBox.computeBoundingBox();
+   //individBox.computeBoundingBox();
     
     // material
     var material = new THREE.MeshPhongMaterial({
