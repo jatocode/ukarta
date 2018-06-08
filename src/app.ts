@@ -23,6 +23,7 @@ export class App {
   contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
+  vemstyr: boolean;
   
   attached() {
     this.init();
@@ -44,7 +45,6 @@ export class App {
     this.scene = new THREE.Scene();
     
     // camera
-    
     this.camera = new THREE.PerspectiveCamera(45, this.ugnsKartaWidth / this.ugnsKartaHeight,1, 1000);
     this.camera.position.x = 5;
     this.camera.position.y = 5;
@@ -52,7 +52,6 @@ export class App {
     this.camera.lookAt(this.scene.position);
     this.camera.up.set(0,0,1);
 
-    this.scene.add(this.camera); // required, since adding light as child of camera
     
     // controls - rotation av ugnen
     this.controls = new OrbitControls(this.camera, this.ugnscanvas);
@@ -60,10 +59,6 @@ export class App {
     this.controls.enablePan = false;
     this.controls.maxPolarAngle = Math.PI / 2;
     
-    // ambient
-    this.scene.add(new THREE.AmbientLight(0x444444));
-    
-    // light
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
 
@@ -72,33 +67,36 @@ export class App {
     var beam = this.createIndividMesh(5.2,1.0,0.4,false);
     beam.position.x = -2.5 + 0.5 + 0.1; 
     beam.position.y = 0;
-    beam.position.z = -1.0 + 0.2 + 0.1;
+    beam.position.z = 0.2 + 0.1;
     this.meshObjectsInUgn.push(beam);
-    beam.rotation.x = Math.PI / 2;
-
-    this.scene.add(beam);
+    //beam.rotation.x = Math.PI / 2;
     this.mesh = beam;
     
     var cyl = this.createIndividMesh(3.0,1.0,0.4,true);
     cyl.position.x = 0;
     cyl.position.y = 0;
-    cyl.position.z = -1.0 + 0.4 + 0.1;
+    cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
-    cyl.rotation.x = Math.PI / 2;
-
-    this.scene.add(cyl);
+    //cyl.rotation.x = Math.PI / 2;
     this.cylmesh = cyl;
+ 
+    var axesHelper = new THREE.AxesHelper(5);
+
+    this.scene.add(new THREE.AmbientLight(0x444444));
+    this.scene.add(this.camera); // required, since adding light as child of camera
+
+    this.scene.add(beam);
+    this.scene.add(cyl);
+    this.scene.add(axesHelper);
 
     this.addEventListenersForIndivids();
-    
-    var axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
     
   }
 
   public render = () => {
     this.renderer.render(this.scene, this.camera);
-   // requestAnimationFrame(this.render);
+    // console.log(this.body.velocity);
+    // requestAnimationFrame(this.render);
   }
 
   public animate = () => {
@@ -112,7 +110,7 @@ export class App {
     this.world.step(this.timeStep);
 
     // Copy coordinates from Cannon.js to Three.js
-    var cannonRules = false;
+    var cannonRules = this.vemstyr;
     if(cannonRules) {
       this.mesh.position.copy(this.body.position);
       this.mesh.quaternion.copy(this.body.quaternion);
@@ -139,27 +137,19 @@ export class App {
     var shape = new CANNON.Box(new CANNON.Vec3(5.2,1.0,0.4)); // Halfvector
     this.body = new CANNON.Body({ mass: 1 });
     this.body.addShape(shape);
-    this.body.angularVelocity.set(0,0,0);
-    this.body.velocity.set(0,0,0);
-    this.body.angularDamping = 0;
-    this.world.addBody(this.body);
 
     var shape2 = new CANNON.Box(new CANNON.Vec3(3.0,1.0,0.4)); // Halfvector
     this.body2 = new CANNON.Body({ mass: 1 });
     this.body2.addShape(shape2);
-    this.body2.angularVelocity.set(0,0,0);
-    this.body2.velocity.set(0,0,0);
-    this.body2.angularDamping = 0.5;
-    this.world.addBody(this.body2);
 
     var groundShape = new CANNON.Plane();
-    var groundBody = new CANNON.Body({
-        mass: 0
-    });
+    var groundBody = new CANNON.Body({ mass: 0 });
     groundBody.addShape(groundShape);
 
+    this.world.addBody(this.body);
+    this.world.addBody(this.body2);
     this.world.addBody(groundBody);
-
+    
     this.body2.addEventListener("collide",function(e){
       //console.log("The sphere just collided with the ground!");
 
@@ -206,52 +196,15 @@ export class App {
     
     // mesh
     me.ugnMesh = new THREE.Mesh(ugnBox, (<any>materials));
-    //me.ugnMesh.scale.set(me.scale, me.scale, me.scale);
-
+    me.ugnMesh.position.x = 0;
+    me.ugnMesh.position.y = 0;
+    me.ugnMesh.position.z = 1;
     me.ugnMesh.rotation.x = Math.PI / 2;
     
     me.scene.add(me.ugnMesh);
-
     
   }
   
-  /*
-  public createOldIndivid = (individOperation: Contract.IndividOperation) => {
-    var me = this;
-    
-    var individMesh = me.createIndividMesh(individOperation);
-    if (individMesh) {
-      individMesh.position.set(individOperation.CentrumX * me.scale, individOperation.CentrumY * me.scale, individOperation.CentrumZ * me.scale);
-      individMesh.rotation.set(THREE.Math.degToRad(individOperation.RotationX), THREE.Math.degToRad(individOperation.RotationY), THREE.Math.degToRad(individOperation.RotationZ));
-      me.calculateUgnsKantForIndivid(individOperation, individMesh);
-      
-      me.scene.add(individMesh);
-      
-      me.meshObjectsInUgn.push(individMesh);
-      me.individOperationsInUgn.push(individOperation);
-    }
-  }
-  
-  public createNewIndivid = (individOperation: Contract.IndividOperation, okToCreateIndivid: boolean) => {
-    var me = this;
-    
-    if (okToCreateIndivid) { //om den ej redan finns
-      var individMesh = this.createIndividMesh(individOperation);
-      if (individMesh) {
-        me.calculateUgnsKantForIndivid(individOperation, individMesh);
-        individMesh.position.set(-(<any>individMesh).limit_x, -(<any>individMesh).limit_y, -(<any>individMesh).limit_z); //positionera i hörnet vid start 
-        
-        me.scene.add(individMesh);
-        
-        me.meshObjectsInUgn.push(individMesh);
-        me.individOperationsInUgn.push(individOperation);
-        me.addEventListenersForIndivids();
-        me.checkObjectCollisions(individMesh, 0);
-        me.checkWallCollision(individMesh);
-      }
-    }
-  }
-  */
 //  private createIndividMesh(individOperation: Contract.IndividOperation) {
   private createIndividMesh(l, b, h, rund) {
     var me = this;
@@ -271,14 +224,14 @@ export class App {
       // }); 
 
       individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 50);
-      individBox.rotateX(THREE.Math.degToRad(90)); //börja med geometrin liggandes
+      //individBox.rotateX(THREE.Math.degToRad(90)); //börja med geometrin liggandes
     }
     else {
       // geometry
-      individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Hojd, individOperation.Langd);
+      individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Langd, individOperation.Hojd );
     }
     
-   //individBox.computeBoundingBox();
+    individBox.computeBoundingBox();
     
     // material
     var material = new THREE.MeshPhongMaterial({
@@ -304,103 +257,7 @@ export class App {
    // me.dragControls.addEventListener('drag', me.moveCallback);
    // me.dragControls.addEventListener('dragend', me.moveEndCallback);
   }
-  
-  /*
-  public removeEventListenersForIndivids = () => {
-    var me = this;
-    
-    if (me.dragControls) {
-      me.dragControls.removeEventListener('dragstart', function (e) { me.moveStartCallback(e, me); });
-      me.dragControls.removeEventListener('drag', me.moveCallback);
-      me.dragControls.removeEventListener('dragend', me.moveEndCallback);
-      me.dragControls.dispose();
-    }
-  }
-  
-  public removeIndivid = (individOperation: Contract.IndividOperation) => {
-    var me = this;
-    
-    var index = me.individOperationsInUgn.findIndex(x => x.Id == individOperation.Id);
-    if (index > -1) {
-      
-      me.individOperationsInUgn.splice(index, 1);
-      
-      var mesh = me.meshObjectsInUgn[index];
-      
-      //ta bort mesh från scene
-      me.scene.remove(mesh);
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-      mesh = undefined;
-      
-      me.meshObjectsInUgn.splice(index, 1);
-    }
-  }
-  
-  
-  private calculateUgnsKantForIndivid(individOperation, individMesh: THREE.Mesh) {
-    var me = this;
-    var ugnBox = me.ugnMesh.geometry.boundingBox.max;
-    
-    var clone = individMesh.geometry.clone();
-    
-    clone.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(individMesh.rotation));
-    clone.computeBoundingBox();
-    
-    var individBox = clone.boundingBox.max;
-    
-    var ugnsKantX = (ugnBox.x - individBox.x) * me.scale;
-    var ugnsKantY = (ugnBox.y - individBox.y) * me.scale;
-    var ugnsKantZ = (ugnBox.z - individBox.z) * me.scale;
-    
-    (<any>individMesh).limit_x = ugnsKantX;
-    (<any>individMesh).limit_y = ugnsKantY;
-    (<any>individMesh).limit_z = ugnsKantZ;
-    
-    clone.dispose(); 
-    return individBox;
-  }
-  
-  private calculateCollisonEdgeForIndivid(collisionMesh: THREE.Mesh, movingMesh: THREE.Mesh) {
-    var me = this;
-    var cloneCollision = collisionMesh.geometry.clone();
-    var cloneMoving = movingMesh.geometry.clone();
-    
-    cloneMoving.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(movingMesh.rotation));
-    cloneMoving.computeBoundingBox();
-    cloneCollision.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(collisionMesh.rotation));
-    cloneCollision.computeBoundingBox();
-    
-    var movingBoxHeight: number = me.roundUp(cloneMoving.boundingBox.max.y,3) * me.scale;
-    var collisionBoxHeight: number = me.roundUp(cloneCollision.boundingBox.max.y,3) * me.scale;
-    
-    
-    var yUpper = me.roundUp(collisionMesh.position.y + movingBoxHeight + collisionBoxHeight, 3) + 0.001;
-    
-    //if (isRound) {
-    //     //om en rund och en rektangulär
-    //    movingMesh.position.y = Number(yUpper.toString().substring(0, yUpper.toString().indexOf(".") + 3));
-    //}
-    //else {
-    //om rektangulära
-    //var yUpper = collisionMesh.position.y + (individCollisionBox.y * me.scale) + (individMovingBox.y * me.scale);
-    movingMesh.position.y = yUpper;
-    //}
-    
-    
-    cloneMoving.dispose();
-    cloneCollision.dispose();
-    
-    me.checkWallCollision(movingMesh);
-  }
-  
-  private roundUp(num, precision) {
-    precision = Math.pow(10, precision)
-    return Math.ceil(num * precision) / precision;
-  }
-  
-  
-  */
+
   private moveStartCallback = (event, me) => {
     me.originPoint = event.object.position.clone();
     //me.parent.setIsDirty(true); //tala om att vyn är dirty ifall en individ har flyttats       
