@@ -6,8 +6,8 @@ import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
 
 export class App {
   message = 'Det här är en ugn';
-  ugnsKartaWidth = 800;
-  ugnsKartaHeight = 400;
+  ugnsKartaWidth = 1000;
+  ugnsKartaHeight = 600;
   renderer:WebGLRenderer;
   scene:Scene;
   world:CANNON.World;
@@ -82,6 +82,7 @@ export class App {
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
+
     //cyl.rotation.x = Math.PI / 2;
     this.cylmesh = cyl;
  
@@ -140,10 +141,16 @@ export class App {
     this.world.defaultContactMaterial.contactEquationRelaxation = 10;
     var shape = new CANNON.Box(new CANNON.Vec3(0.5, 2.6, 0.2)); // Halfvector
     this.body = new CANNON.Body({ mass: 1000 });
+    this.body.fixedRotation = true;
     this.body.addShape(shape);
 
-    var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
+   // var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
+    var shape2 = new CANNON.Cylinder(0.25, 0.25, 3, 20);
     this.body2 = new CANNON.Body({ mass: 1000 });
+    this.body2.fixedRotation = true;
+    //this.body2.quaternion.setFromEuler(0, Math.PI/2, 0);    
+    //this.cylmesh.quaternion.copy(this.body2.quaternion);
+
     this.body2.addShape(shape2);
 
     var groundShape = new CANNON.Plane();
@@ -182,6 +189,8 @@ export class App {
       //if(this.colliding) {
         this.body.velocity.setZero();
         this.body.angularVelocity.setZero();
+        this.body2.velocity.setZero();
+        this.body2.angularVelocity.setZero();
         this.colliding = false;
       //}
     }.bind(this));
@@ -281,6 +290,7 @@ export class App {
         case 11:
           me.body.position.copy(me.mesh.position);
           me.body.quaternion.copy(me.mesh.quaternion);
+
           break;
         case 12:
           me.body2.position.copy(me.cylmesh.position);
