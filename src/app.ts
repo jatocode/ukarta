@@ -27,6 +27,7 @@ export class App {
   attached() {
     this.init();
     this.initCannon();
+    this.render();
     this.animate();
     //this.render();
   }
@@ -50,6 +51,8 @@ export class App {
     this.camera.position.y = 5;
     this.camera.position.z = 5;
     this.camera.lookAt(this.scene.position);
+    this.camera.up.set(0,0,1);
+
     this.scene.add(this.camera); // required, since adding light as child of camera
     
     // controls - rotation av ugnen
@@ -65,6 +68,7 @@ export class App {
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
 
+
     this.createUgnBox();
 
     var beam = this.createIndividMesh(5.2,1.0,0.4,false);
@@ -72,6 +76,8 @@ export class App {
     beam.position.y = -1.0 + 0.2 + 0.1;
     beam.position.z = 0;
     this.meshObjectsInUgn.push(beam);
+    beam.rotation.x = Math.PI / 2;
+
     this.scene.add(beam);
     this.mesh = beam;
     
@@ -80,6 +86,8 @@ export class App {
     cyl.position.y = -1.0 + 0.4 + 0.1;
     cyl.position.z = 1.0;
     this.meshObjectsInUgn.push(cyl);
+    cyl.rotation.x = Math.PI / 2;
+
     this.scene.add(cyl);
     this.cylmesh = cyl;
 
@@ -87,6 +95,11 @@ export class App {
     
     var axesHelper = new THREE.AxesHelper(5);
     this.scene.add(axesHelper);
+
+    
+    var grid = new THREE.GridHelper(100, 10);
+    grid.rotation.x = Math.PI / 2;
+    this.scene.add(grid);
     
   }
 
@@ -104,22 +117,27 @@ export class App {
   public updatePhysics = () => {
     // Step the physics world
     this.world.step(this.timeStep);
-    // Copy coordinates from Cannon.js to Three.js
-    this.mesh.position.copy(this.body.position);
-    this.mesh.quaternion.copy(this.body.quaternion);
-    this.cylmesh.position.copy(this.body2.position);
-    this.cylmesh.quaternion.copy(this.body2.quaternion);
-    // Three styr position
-    //this.body.position.copy(this.mesh.position);
-    //this.body.quaternion.copy(this.mesh.quaternion);
 
-    //this.body2.position.copy(this.cylmesh.position);
-    //this.body2.quaternion.copy(this.cylmesh.quaternion);
+    // Copy coordinates from Cannon.js to Three.js
+    var cannonRules = false;
+    if(cannonRules) {
+      this.mesh.position.copy(this.body.position);
+      this.mesh.quaternion.copy(this.body.quaternion);
+      this.cylmesh.position.copy(this.body2.position);
+      this.cylmesh.quaternion.copy(this.body2.quaternion);
+    } else {
+    // Three styr position
+      this.body.position.copy(this.mesh.position);
+      this.body.quaternion.copy(this.mesh.quaternion);
+
+      this.body2.position.copy(this.cylmesh.position);
+      this.body2.quaternion.copy(this.cylmesh.quaternion);
+    }
 }
 
  public initCannon = () => {
     this.world = new CANNON.World();
-    this.world.gravity.set(0,-9.82,0);
+    this.world.gravity.set(0,0,-9.82);
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.solver.iterations = 1;
 
@@ -146,13 +164,19 @@ export class App {
         mass: 0
     });
     groundBody.addShape(groundShape);
+
     this.world.addBody(groundBody);
 
     this.body2.addEventListener("collide",function(e){
-      console.log("The sphere just collided with the ground!");
-      console.log("Collided with body:",e.body);
-      console.log("Contact between bodies:",e.contact);
-  });
+      //console.log("The sphere just collided with the ground!");
+
+      if(e.contact) {
+        console.log("Contact between bodies:",e.contact);
+      }
+
+      if(e.body)
+        console.log("Collided with body:",e.body);
+    });
 
 }
   private createUgnBox = () => {
@@ -190,8 +214,11 @@ export class App {
     // mesh
     me.ugnMesh = new THREE.Mesh(ugnBox, (<any>materials));
     //me.ugnMesh.scale.set(me.scale, me.scale, me.scale);
+
+    me.ugnMesh.rotation.x = Math.PI / 2;
     
     me.scene.add(me.ugnMesh);
+
     
   }
   
@@ -277,7 +304,10 @@ export class App {
     //me.removeEventListenersForIndivids();
     
     me.dragControls = new DragControls(me.meshObjectsInUgn, me.camera, me.ugnscanvas);
-    me.dragControls.addEventListener('dragstart', function (e) { me.moveStartCallback(e, me); });
+    me.dragControls.addEventListener('dragstart', function (e) {
+       //me.body.velocity.set(5,5,5);
+       me.moveStartCallback(e, me); 
+    });
    // me.dragControls.addEventListener('drag', me.moveCallback);
    // me.dragControls.addEventListener('dragend', me.moveEndCallback);
   }
