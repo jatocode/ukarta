@@ -27,6 +27,7 @@ export class App {
   bi: any;
   bj: any;
   collide;
+  colliding;
   timestamp;
   
   attached() {
@@ -138,11 +139,11 @@ export class App {
     this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
     this.world.defaultContactMaterial.contactEquationRelaxation = 10;
     var shape = new CANNON.Box(new CANNON.Vec3(0.5, 2.6, 0.2)); // Halfvector
-    this.body = new CANNON.Body({ mass: 1 });
+    this.body = new CANNON.Body({ mass: 1000 });
     this.body.addShape(shape);
 
     var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
-    this.body2 = new CANNON.Body({ mass: 0 });
+    this.body2 = new CANNON.Body({ mass: 1000 });
     this.body2.addShape(shape2);
 
     var groundShape = new CANNON.Plane();
@@ -169,6 +170,20 @@ export class App {
       } else  if(e.body) {
         this.collide = true;
       } 
+      this.colliding = true;
+    }.bind(this));
+
+    this.body.addEventListener("beginContact",function(e){
+      console.log('WEEEE');
+      this.colliding = true;
+    }.bind(this));
+
+    this.world.addEventListener("postStep",function(e){
+      //if(this.colliding) {
+        this.body.velocity.setZero();
+        this.body.angularVelocity.setZero();
+        this.colliding = false;
+      //}
     }.bind(this));
 
 }
@@ -272,7 +287,8 @@ export class App {
           me.body2.quaternion.copy(me.cylmesh.quaternion);
           break;        
       } 
-      //me.world.step(me.timeStep);      
+
+      me.world.step(me.timeStep);
     });
   }
 
