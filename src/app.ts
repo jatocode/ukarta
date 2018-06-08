@@ -23,7 +23,7 @@ export class App {
   contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
-  vemstyr: boolean;
+  vemstyr: boolean = true;
   
   attached() {
     this.init();
@@ -46,9 +46,9 @@ export class App {
     
     // camera
     this.camera = new THREE.PerspectiveCamera(45, this.ugnsKartaWidth / this.ugnsKartaHeight,1, 1000);
-    this.camera.position.x = 5;
-    this.camera.position.y = 5;
-    this.camera.position.z = 5;
+    this.camera.position.x = -2;
+    this.camera.position.y = 7;
+    this.camera.position.z = 1;
     this.camera.lookAt(this.scene.position);
     this.camera.up.set(0,0,1);
 
@@ -145,9 +145,16 @@ export class App {
     var groundBody = new CANNON.Body({ mass: 0 });
     groundBody.addShape(groundShape);
 
+    this.body.position.copy(this.mesh.position);
+    this.body.quaternion.copy(this.mesh.quaternion);
+
+    this.body2.position.copy(this.cylmesh.position);
+    this.body2.quaternion.copy(this.cylmesh.quaternion);
+
     this.world.addBody(this.body);
     this.world.addBody(this.body2);
     this.world.addBody(groundBody);
+    
     
     this.body2.addEventListener("collide",function(e){
       //console.log("The sphere just collided with the ground!");
