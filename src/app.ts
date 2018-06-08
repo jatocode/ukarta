@@ -27,7 +27,6 @@ export class App {
   attached() {
     this.init();
     this.initCannon();
-    this.render();
     this.animate();
     //this.render();
   }
@@ -68,13 +67,12 @@ export class App {
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
 
-
     this.createUgnBox();
 
     var beam = this.createIndividMesh(5.2,1.0,0.4,false);
-    beam.position.x = -2.5 + 0.5 + 0.1;
-    beam.position.y = -1.0 + 0.2 + 0.1;
-    beam.position.z = 0;
+    beam.position.x = -2.5 + 0.5 + 0.1; 
+    beam.position.y = 0;
+    beam.position.z = -1.0 + 0.2 + 0.1;
     this.meshObjectsInUgn.push(beam);
     beam.rotation.x = Math.PI / 2;
 
@@ -82,9 +80,9 @@ export class App {
     this.mesh = beam;
     
     var cyl = this.createIndividMesh(3.0,1.0,0.4,true);
-    cyl.position.x = -2.5 + 2.5 + 0.1;
-    cyl.position.y = -1.0 + 0.4 + 0.1;
-    cyl.position.z = 1.0;
+    cyl.position.x = 0;
+    cyl.position.y = 0;
+    cyl.position.z = -1.0 + 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
     cyl.rotation.x = Math.PI / 2;
 
@@ -95,11 +93,6 @@ export class App {
     
     var axesHelper = new THREE.AxesHelper(5);
     this.scene.add(axesHelper);
-
-    
-    var grid = new THREE.GridHelper(100, 10);
-    grid.rotation.x = Math.PI / 2;
-    this.scene.add(grid);
     
   }
 
