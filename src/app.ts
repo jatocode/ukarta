@@ -23,7 +23,10 @@ export class App {
   contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
-  vemstyr: boolean = true;
+  vemstyr: boolean = false;
+  bi: any;
+  bj: any;
+  collide;
   
   attached() {
     this.init();
@@ -157,15 +160,17 @@ export class App {
     
     
     this.body2.addEventListener("collide",function(e){
-      //console.log("The sphere just collided with the ground!");
-
       if(e.contact) {
+        this.collide = true;
         console.log("Contact between bodies:",e.contact);
-      }
+        this.bi = e.contact.bi.id;
+        this.bj = e.contact.bj.id;
 
-      if(e.body)
+      } else  if(e.body) {
+        this.collide = true;
         console.log("Collided with body:",e.body);
-    });
+      } 
+    }.bind(this));
 
 }
   private createUgnBox = () => {
