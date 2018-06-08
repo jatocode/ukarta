@@ -23,10 +23,11 @@ export class App {
   contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
-  vemstyr: boolean = false;
+  vemstyr: boolean = true;
   bi: any;
   bj: any;
   collide;
+  timestamp;
   
   attached() {
     this.init();
@@ -90,7 +91,7 @@ export class App {
 
     this.scene.add(beam);
     this.scene.add(cyl);
-    this.scene.add(axesHelper);
+    //this.scene.add(axesHelper);
 
     this.addEventListenersForIndivids();
     
@@ -130,7 +131,7 @@ export class App {
 
  public initCannon = () => {
     this.world = new CANNON.World();
-    this.world.gravity.set(0,0,-9.82);
+    this.world.gravity.set(0,0,0);
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.solver.iterations = 1;
 
@@ -141,7 +142,7 @@ export class App {
     this.body.addShape(shape);
 
     var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
-    this.body2 = new CANNON.Body({ mass: 1 });
+    this.body2 = new CANNON.Body({ mass: 0 });
     this.body2.addShape(shape2);
 
     var groundShape = new CANNON.Plane();
@@ -162,13 +163,11 @@ export class App {
     this.body2.addEventListener("collide",function(e){
       if(e.contact) {
         this.collide = true;
-        console.log("Contact between bodies:",e.contact);
         this.bi = e.contact.bi.id;
         this.bj = e.contact.bj.id;
 
       } else  if(e.body) {
         this.collide = true;
-        console.log("Collided with body:",e.body);
       } 
     }.bind(this));
 
@@ -261,12 +260,20 @@ export class App {
     //me.removeEventListenersForIndivids();
     
     me.dragControls = new DragControls(me.meshObjectsInUgn, me.camera, me.ugnscanvas);
-    me.dragControls.addEventListener('dragstart', function (e) {
-       //me.body.velocity.set(5,5,5);
-       me.moveStartCallback(e, me); 
+    me.dragControls.addEventListener('drag', function (e) {
+      me.moveStartCallback(e, me); 
+      switch(e.object.id) {
+        case 11:
+          me.body.position.copy(me.mesh.position);
+          me.body.quaternion.copy(me.mesh.quaternion);
+          break;
+        case 12:
+          me.body2.position.copy(me.cylmesh.position);
+          me.body2.quaternion.copy(me.cylmesh.quaternion);
+          break;        
+      } 
+      //me.world.step(me.timeStep);      
     });
-   // me.dragControls.addEventListener('drag', me.moveCallback);
-   // me.dragControls.addEventListener('dragend', me.moveEndCallback);
   }
 
   private moveStartCallback = (event, me) => {
