@@ -72,7 +72,7 @@ export class App {
     //beam.rotation.x = Math.PI / 2;
     this.mesh = beam;
     
-    var cyl = this.createIndividMesh(3.0,1.0,0.4,true);
+    var cyl = this.createIndividMesh(3.0,0.5,0,true);
     cyl.position.x = 0;
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
@@ -95,7 +95,6 @@ export class App {
 
   public render = () => {
     this.renderer.render(this.scene, this.camera);
-    // console.log(this.body.velocity);
     // requestAnimationFrame(this.render);
   }
 
@@ -134,11 +133,11 @@ export class App {
 
     this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
     this.world.defaultContactMaterial.contactEquationRelaxation = 10;
-    var shape = new CANNON.Box(new CANNON.Vec3(5.2,1.0,0.4)); // Halfvector
+    var shape = new CANNON.Box(new CANNON.Vec3(0.5, 2.6, 0.2)); // Halfvector
     this.body = new CANNON.Body({ mass: 1 });
     this.body.addShape(shape);
 
-    var shape2 = new CANNON.Box(new CANNON.Vec3(3.0,1.0,0.4)); // Halfvector
+    var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
     this.body2 = new CANNON.Body({ mass: 1 });
     this.body2.addShape(shape2);
 
@@ -198,7 +197,7 @@ export class App {
     me.ugnMesh = new THREE.Mesh(ugnBox, (<any>materials));
     me.ugnMesh.position.x = 0;
     me.ugnMesh.position.y = 0;
-    me.ugnMesh.position.z = 1;
+    me.ugnMesh.position.z = 1.0;
     me.ugnMesh.rotation.x = Math.PI / 2;
     
     me.scene.add(me.ugnMesh);
