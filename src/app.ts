@@ -38,10 +38,34 @@ export class App {
     beam.position.z = 0.2 + 0.1;
     this.meshObjectsInUgn.push(beam);
     this.inUgn.push(material);
-    
-    var material = this.createIndivid(3.0,0.5,0,true);
+ 
+    material = this.createIndivid(5.2,1.0,0.4,false);
+    var beam = material.mesh;
+    beam.position.x = -2.5 + 0.5 + 0.1; 
+    beam.position.y = 0;
+    beam.position.z = 0.2 + 0.1 + 0.5;
+    this.meshObjectsInUgn.push(beam);
+    this.inUgn.push(material);
+
+    material = this.createIndivid(3.0,0.5,0,true);
     var cyl = material.mesh;
     cyl.position.x = 0;
+    cyl.position.y = 0;
+    cyl.position.z = 0.4 + 0.1;
+    this.meshObjectsInUgn.push(cyl);
+    this.inUgn.push(material);
+
+    material = this.createIndivid(3.0,0.5,0,true);
+    var cyl = material.mesh;
+    cyl.position.x = 1.0;
+    cyl.position.y = 0;
+    cyl.position.z = 0.4 + 0.1;
+    this.meshObjectsInUgn.push(cyl);
+    this.inUgn.push(material);
+
+    material = this.createIndivid(3.0,0.5,0,true);
+    var cyl = material.mesh;
+    cyl.position.x = 1.5;
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
@@ -197,6 +221,7 @@ export class App {
       individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
       let shape = new CANNON.Cylinder(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
       physicObj = new CANNON.Body({ mass: 1000 });
+      physicObj.fixedRotation = true;
       physicObj.addShape(shape);
   
       // Rotate cannon.js cyl to match three.js
@@ -221,7 +246,7 @@ export class App {
     
     // material
     var material = new THREE.MeshPhongMaterial({
-      color: 'darkorange'
+      color: 'orange'
     });
     
     // mesh
