@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon';
+import * as THREED from 'cannon/tools/threejs/CannonDebugRenderer';
 import OrbitControls from 'three-orbitcontrols';
 import DragControls from 'three-dragcontrols';
 import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
@@ -29,10 +30,12 @@ export class App {
   collide;
   colliding;
   timestamp;
+  debugr;
   
   attached() {
     this.init();
     this.initCannon();
+    //this.debugr = THREED.CannonDebugRenderer(this.scene, this.world);
     this.animate();
     //this.render();
   }
@@ -106,6 +109,7 @@ export class App {
 
   public animate = () => {
     requestAnimationFrame( this.animate );
+    //this.debugr.update();
     this.updatePhysics();
     this.render();
   }
@@ -147,9 +151,15 @@ export class App {
    // var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
     var shape2 = new CANNON.Cylinder(0.25, 0.25, 3, 20);
     this.body2 = new CANNON.Body({ mass: 1000 });
+    this.body2.addShape(shape2);
     this.body2.fixedRotation = true;
-    //this.body2.quaternion.setFromEuler(0, Math.PI/2, 0);    
-    //this.cylmesh.quaternion.copy(this.body2.quaternion);
+
+    // Rotate cannon.js cyl to match three.js
+    // https://github.com/schteppe/cannon.js/issues/58
+    var quat = new CANNON.Quaternion();
+    quat.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+    var translation = new CANNON.Vec3(0,0,0);
+    this.body2.shapes[0].transformAllPoints(translation,quat);
 
     this.body2.addShape(shape2);
 
