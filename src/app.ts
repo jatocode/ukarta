@@ -12,35 +12,53 @@ export class App {
   renderer:WebGLRenderer;
   scene:Scene;
   world:CANNON.World;
-  body;
-  body2;
+  ugnMesh;
   timeStep: number = 1/60;
   camera:PerspectiveCamera;
   controls:OrbitControls;
   ugnscanvas;
-  mesh: THREE.Mesh;
-  cylmesh: THREE.Mesh;
-  ugnMesh: THREE.Mesh;
-  contacts: number = 0;
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
-  vemstyr: boolean = true;
-  bi: any;
-  bj: any;
-  collide;
-  colliding;
-  timestamp;
-  debugr;
+  public inUgn: {mesh: THREE.Mesh, phys: any}[] = [];
   
   attached() {
-    this.init();
+    this.initThree();
     this.initCannon();
+    this.addMaterial();
     //this.debugr = THREED.CannonDebugRenderer(this.scene, this.world);
     this.animate();
     //this.render();
   }
   
-  public init = () => {
+  public addMaterial = () => {
+    var material = this.createIndivid(5.2,1.0,0.4,false);
+    var beam = material.mesh;
+    beam.position.x = -2.5 + 0.5 + 0.1; 
+    beam.position.y = 0;
+    beam.position.z = 0.2 + 0.1;
+    this.meshObjectsInUgn.push(beam);
+    this.inUgn.push(material);
+    
+    var material = this.createIndivid(3.0,0.5,0,true);
+    var cyl = material.mesh;
+    cyl.position.x = 0;
+    cyl.position.y = 0;
+    cyl.position.z = 0.4 + 0.1;
+    this.meshObjectsInUgn.push(cyl);
+    this.inUgn.push(material);
+
+    this.inUgn.forEach(element => {
+      this.scene.add(element.mesh);
+      this.world.addBody(element.phys);
+
+      element.phys.position.copy(element.mesh.position);
+      element.phys.quaternion.copy(element.mesh.quaternion);
+  
+    });
+
+  }
+
+  public initThree = () => {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.ugnscanvas,
       alpha: true,     // transparent background
@@ -59,7 +77,6 @@ export class App {
     this.camera.position.z = 1;
     this.camera.lookAt(this.scene.position);
     this.camera.up.set(0,0,1);
-
     
     // controls - rotation av ugnen
     this.controls = new OrbitControls(this.camera, this.ugnscanvas);
@@ -72,31 +89,10 @@ export class App {
 
     this.createUgnBox();
 
-    var beam = this.createIndividMesh(5.2,1.0,0.4,false);
-    beam.position.x = -2.5 + 0.5 + 0.1; 
-    beam.position.y = 0;
-    beam.position.z = 0.2 + 0.1;
-    this.meshObjectsInUgn.push(beam);
-    //beam.rotation.x = Math.PI / 2;
-    this.mesh = beam;
-    
-    var cyl = this.createIndividMesh(3.0,0.5,0,true);
-    cyl.position.x = 0;
-    cyl.position.y = 0;
-    cyl.position.z = 0.4 + 0.1;
-    this.meshObjectsInUgn.push(cyl);
-
-    //cyl.rotation.x = Math.PI / 2;
-    this.cylmesh = cyl;
- 
     var axesHelper = new THREE.AxesHelper(5);
 
     this.scene.add(new THREE.AmbientLight(0x444444));
     this.scene.add(this.camera); // required, since adding light as child of camera
-
-    this.scene.add(beam);
-    this.scene.add(cyl);
-    //this.scene.add(axesHelper);
 
     this.addEventListenersForIndivids();
     
@@ -104,7 +100,6 @@ export class App {
 
   public render = () => {
     this.renderer.render(this.scene, this.camera);
-    // requestAnimationFrame(this.render);
   }
 
   public animate = () => {
@@ -118,22 +113,12 @@ export class App {
     // Step the physics world
     this.world.step(this.timeStep);
 
-    // Copy coordinates from Cannon.js to Three.js
-    var cannonRules = this.vemstyr;
-    if(cannonRules) {
-      this.mesh.position.copy(this.body.position);
-      this.mesh.quaternion.copy(this.body.quaternion);
-      this.cylmesh.position.copy(this.body2.position);
-      this.cylmesh.quaternion.copy(this.body2.quaternion);
-    } else {
-    // Three styr position
-      this.body.position.copy(this.mesh.position);
-      this.body.quaternion.copy(this.mesh.quaternion);
-
-      this.body2.position.copy(this.cylmesh.position);
-      this.body2.quaternion.copy(this.cylmesh.quaternion);
+    for (const material of this.inUgn) {
+      material.mesh.position.copy(material.phys.position);
+      material.mesh.quaternion.copy(material.phys.quaternion);
     }
-}
+
+  }
 
  public initCannon = () => {
     this.world = new CANNON.World();
@@ -143,47 +128,18 @@ export class App {
 
     this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
     this.world.defaultContactMaterial.contactEquationRelaxation = 10;
-    var shape = new CANNON.Box(new CANNON.Vec3(0.5, 2.6, 0.2)); // Halfvector
-    this.body = new CANNON.Body({ mass: 1000 });
-    this.body.fixedRotation = true;
-    this.body.addShape(shape);
-
-   // var shape2 = new CANNON.Box(new CANNON.Vec3(0.25,1.5,0.25)); // Halfvector
-    var shape2 = new CANNON.Cylinder(0.25, 0.25, 3, 20);
-    this.body2 = new CANNON.Body({ mass: 1000 });
-    this.body2.addShape(shape2);
-    this.body2.fixedRotation = true;
-
-    // Rotate cannon.js cyl to match three.js
-    // https://github.com/schteppe/cannon.js/issues/58
-    var quat = new CANNON.Quaternion();
-    quat.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
-    var translation = new CANNON.Vec3(0,0,0);
-    this.body2.shapes[0].transformAllPoints(translation,quat);
-
-    this.body2.addShape(shape2);
 
     var groundShape = new CANNON.Plane();
     var groundBody = new CANNON.Body({ mass: 0 });
     groundBody.addShape(groundShape);
-
-    this.body.position.copy(this.mesh.position);
-    this.body.quaternion.copy(this.mesh.quaternion);
-
-    this.body2.position.copy(this.cylmesh.position);
-    this.body2.quaternion.copy(this.cylmesh.quaternion);
-
-    this.world.addBody(this.body);
-    this.world.addBody(this.body2);
     this.world.addBody(groundBody);
-    
+
     this.world.addEventListener("postStep",function(e){
       // No one moves!
-        this.body.velocity.setZero();
-        this.body.angularVelocity.setZero();
-        this.body2.velocity.setZero();
-        this.body2.angularVelocity.setZero();
-        this.colliding = false;
+      for (const material of this.inUgn) {
+        material.phys.velocity.setZero();
+        material.phys.angularVelocity.setZero();
+      }
     }.bind(this));
 
 }
@@ -231,17 +187,34 @@ export class App {
   }
   
 //  private createIndividMesh(individOperation: Contract.IndividOperation) {
-  private createIndividMesh(l, b, h, rund) {
+  private createIndivid(l, b, h, rund) {
     var me = this;
     var individBox;
+    var physicObj;
     var individOperation = { Bredd: b, Langd: l, Hojd: h, IsRunt: rund}
     
     if (individOperation.IsRunt) {
-      individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 50);
+      individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
+      let shape = new CANNON.Cylinder(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
+      physicObj = new CANNON.Body({ mass: 1000 });
+      physicObj.addShape(shape);
+  
+      // Rotate cannon.js cyl to match three.js
+      // https://github.com/schteppe/cannon.js/issues/58
+      var quat = new CANNON.Quaternion();
+      quat.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+      var translation = new CANNON.Vec3(0,0,0);
+      physicObj.shapes[0].transformAllPoints(translation,quat);
+
+      physicObj.fixedRotation = true;
+
     }
     else {
-      // geometry
-      individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Langd, individOperation.Hojd );
+      individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Langd, individOperation.Hojd ); 
+      let shape = new CANNON.Box(new CANNON.Vec3(individOperation.Bredd/2, individOperation.Langd/2, individOperation.Hojd/2)); // Halfvector
+      physicObj = new CANNON.Body({ mass: 1000 });
+      physicObj.fixedRotation = true;
+      physicObj.addShape(shape);
     }
     
     individBox.computeBoundingBox();
@@ -254,7 +227,7 @@ export class App {
     // mesh
     var individMesh = new THREE.Mesh(individBox, material);
     
-    return individMesh;
+    return {mesh: individMesh, phys: physicObj};
   }
   
   public addEventListenersForIndivids = () => {
@@ -265,10 +238,11 @@ export class App {
     me.dragControls.addEventListener('drag', function (e) {
       me.moveStartCallback(e, me); 
 
-      me.body.position.copy(me.mesh.position);
-      me.body.quaternion.copy(me.mesh.quaternion);
-      me.body2.position.copy(me.cylmesh.position);
-      me.body2.quaternion.copy(me.cylmesh.quaternion);
+      for (const material of me.inUgn) {
+        // TODO Just copy position for element e
+        material.phys.position.copy(material.mesh.position);
+        material.phys.quaternion.copy(material.mesh.quaternion);
+      }
 
       me.world.step(me.timeStep);
     });
