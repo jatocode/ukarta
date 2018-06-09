@@ -177,32 +177,13 @@ export class App {
     this.world.addBody(this.body2);
     this.world.addBody(groundBody);
     
-    
-    this.body2.addEventListener("collide",function(e){
-      if(e.contact) {
-        this.collide = true;
-        this.bi = e.contact.bi.id;
-        this.bj = e.contact.bj.id;
-
-      } else  if(e.body) {
-        this.collide = true;
-      } 
-      this.colliding = true;
-    }.bind(this));
-
-    this.body.addEventListener("beginContact",function(e){
-      console.log('WEEEE');
-      this.colliding = true;
-    }.bind(this));
-
     this.world.addEventListener("postStep",function(e){
-      //if(this.colliding) {
+      // No one moves!
         this.body.velocity.setZero();
         this.body.angularVelocity.setZero();
         this.body2.velocity.setZero();
         this.body2.angularVelocity.setZero();
         this.colliding = false;
-      //}
     }.bind(this));
 
 }
@@ -256,19 +237,7 @@ export class App {
     var individOperation = { Bredd: b, Langd: l, Hojd: h, IsRunt: rund}
     
     if (individOperation.IsRunt) {
-      // let shape = new THREE.Shape();
-
-      // shape.lineTo(individOperation.Bredd, 0);
-      // shape.lineTo(individOperation.Bredd/2, individOperation.Hojd);
-      // shape.lineTo(0, 0);
-
-      // individBox = new THREE.ExtrudeGeometry(shape, {
-      //     bevelEnabled: false,
-      //     amount: individOperation.Langd
-      // }); 
-
       individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 50);
-      //individBox.rotateX(THREE.Math.degToRad(90)); //börja med geometrin liggandes
     }
     else {
       // geometry
@@ -284,7 +253,6 @@ export class App {
     
     // mesh
     var individMesh = new THREE.Mesh(individBox, material);
-    //individMesh.scale.set(me.scale, me.scale, me.scale);
     
     return individMesh;
   }
@@ -296,17 +264,11 @@ export class App {
     me.dragControls = new DragControls(me.meshObjectsInUgn, me.camera, me.ugnscanvas);
     me.dragControls.addEventListener('drag', function (e) {
       me.moveStartCallback(e, me); 
-      switch(e.object.id) {
-        case 11:
-          me.body.position.copy(me.mesh.position);
-          me.body.quaternion.copy(me.mesh.quaternion);
 
-          break;
-        case 12:
-          me.body2.position.copy(me.cylmesh.position);
-          me.body2.quaternion.copy(me.cylmesh.quaternion);
-          break;        
-      } 
+      me.body.position.copy(me.mesh.position);
+      me.body.quaternion.copy(me.mesh.quaternion);
+      me.body2.position.copy(me.cylmesh.position);
+      me.body2.quaternion.copy(me.cylmesh.quaternion);
 
       me.world.step(me.timeStep);
     });
