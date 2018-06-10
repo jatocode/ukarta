@@ -31,45 +31,56 @@ export class App {
   }
   
   public addMaterial = () => {
-    var material = this.createIndivid(5.2,1.0,0.4,false);
-    var beam = material.mesh;
+    var individ = this.createIndivid(5.2,1.0,0.4,false);
+    var beam = individ.mesh;
     beam.position.x = -2.5 + 0.5 + 0.1; 
     beam.position.y = 0;
     beam.position.z = 0.2 + 0.1;
     this.meshObjectsInUgn.push(beam);
-    this.inUgn.push(material);
+    this.inUgn.push(individ);
  
-    material = this.createIndivid(5.2,1.0,0.4,false);
-    var beam = material.mesh;
+    individ = this.createIndivid(5.2,1.0,0.4,false);
+    var beam = individ.mesh;
     beam.position.x = -2.5 + 0.5 + 0.1; 
     beam.position.y = 0;
-    beam.position.z = 0.2 + 0.1 + 0.5;
+    beam.position.z = 0.2 + 0.2 + 0.3;
     this.meshObjectsInUgn.push(beam);
-    this.inUgn.push(material);
+    this.inUgn.push(individ);
 
-    material = this.createIndivid(3.0,0.5,0,true);
-    var cyl = material.mesh;
+    // Mellanlägg
+    individ = this.createIndivid(7.0,0.5,0.05,false);
+    var beam = individ.mesh;
+    beam.position.x = -2.5 + 0.5 + 0.1; 
+    beam.position.y = 0;
+    beam.position.z = 0.2 + 0.1;
+    this.meshObjectsInUgn.push(beam);
+    var m = new THREE.MeshStandardMaterial({color: 'blue', metalness: 0.5, roughness: 0.5 });
+    individ.mesh.material = m;
+    this.inUgn.push(individ);
+
+    individ = this.createIndivid(3.0,0.5,0,true);
+    var cyl = individ.mesh;
     cyl.position.x = 0;
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
-    this.inUgn.push(material);
+    this.inUgn.push(individ);
 
-    material = this.createIndivid(3.0,0.5,0,true);
-    var cyl = material.mesh;
+    individ = this.createIndivid(3.0,0.5,0,true);
+    var cyl = individ.mesh;
     cyl.position.x = 1.0;
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
-    this.inUgn.push(material);
+    this.inUgn.push(individ);
 
-    material = this.createIndivid(3.0,0.5,0,true);
-    var cyl = material.mesh;
+    individ = this.createIndivid(3.0,0.5,0,true);
+    var cyl = individ.mesh;
     cyl.position.x = 1.5;
     cyl.position.y = 0;
     cyl.position.z = 0.4 + 0.1;
     this.meshObjectsInUgn.push(cyl);
-    this.inUgn.push(material);
+    this.inUgn.push(individ);
 
     this.inUgn.forEach(element => {
       this.scene.add(element.mesh);
@@ -219,8 +230,8 @@ export class App {
     
     if (individOperation.IsRunt) {
       individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
-      let shape = new CANNON.Cylinder(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
-      physicObj = new CANNON.Body({ mass: 1000 });
+      let shape = new CANNON.Cylinder(-0.01 + individOperation.Bredd / 2, -0.01 + individOperation.Bredd / 2, individOperation.Langd, 24);
+      physicObj = new CANNON.Body({ mass: 1 });
       physicObj.fixedRotation = true;
       physicObj.addShape(shape);
   
@@ -237,7 +248,7 @@ export class App {
     else {
       individBox = new THREE.BoxGeometry(individOperation.Bredd, individOperation.Langd, individOperation.Hojd ); 
       let shape = new CANNON.Box(new CANNON.Vec3(individOperation.Bredd/2, individOperation.Langd/2, individOperation.Hojd/2)); // Halfvector
-      physicObj = new CANNON.Body({ mass: 1000 });
+      physicObj = new CANNON.Body({ mass: 1 });
       physicObj.fixedRotation = true;
       physicObj.addShape(shape);
     }
@@ -245,9 +256,7 @@ export class App {
     individBox.computeBoundingBox();
     
     // material
-    var material = new THREE.MeshPhongMaterial({
-      color: 'orange'
-    });
+    var material = new THREE.MeshStandardMaterial({color: 'darkorange', metalness: 0.5, roughness: 0.5 });
     
     // mesh
     var individMesh = new THREE.Mesh(individBox, material);
@@ -264,9 +273,16 @@ export class App {
       me.moveStartCallback(e, me); 
 
       for (const material of me.inUgn) {
-        // TODO Just copy position for element e
-        material.phys.position.copy(material.mesh.position);
-        material.phys.quaternion.copy(material.mesh.quaternion);
+
+        if(e.object.id == material.mesh.id) {
+          material.phys.position.copy(material.mesh.position);
+          material.phys.quaternion.copy(material.mesh.quaternion);
+        //   material.phys.mass = 1;
+        //   material.phys.updateMassProperties();
+        } //else {
+        //   material.phys.mass = 0;
+        //   material.phys.updateMassProperties();        
+        // }
       }
 
       me.world.step(me.timeStep);
