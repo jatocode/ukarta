@@ -3,7 +3,7 @@ import * as CANNON from 'cannon';
 import * as THREED from 'cannon/tools/threejs/CannonDebugRenderer';
 import OrbitControls from 'three-orbitcontrols';
 import DragControls from 'three-dragcontrols';
-import { WebGLRenderer, Scene, PerspectiveCamera } from 'three';
+import { WebGLRenderer, Scene, PerspectiveCamera, Vector3 } from 'three';
 
 export class App {
   message = 'Det här är en ugn';
@@ -20,6 +20,7 @@ export class App {
   public dragControls;
   public meshObjectsInUgn: THREE.Mesh[] = [];
   public inUgn: {mesh: THREE.Mesh, phys: any}[] = [];
+  rayCaster = new THREE.Raycaster();
   
   attached() {
     this.initThree();
@@ -88,9 +89,30 @@ export class App {
 
       element.phys.position.copy(element.mesh.position);
       element.phys.quaternion.copy(element.mesh.quaternion);
-  
+
+      var id = this.makeTextSprite(element.mesh.id + "",'');  
+      id.position.set(-.4,2,0);    
+      element.mesh.add(id);
     });
 
+  }
+
+  public makeTextSprite(message, parameters) {
+    var fontface = parameters.hasOwnProperty("fontface") ? parameters["fontface"] : "Arial";
+    var fontsize = 40;
+  
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    context.font = fontsize + "px " + fontface;
+    context.fillStyle = 'black';
+    context.fillText(message, 0, 40);
+  
+    var texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+  
+    var spriteMaterial = new THREE.SpriteMaterial({map: texture});
+    var sprite = new THREE.Sprite(spriteMaterial);
+    return sprite;
   }
 
   public initThree = () => {
@@ -118,6 +140,7 @@ export class App {
     this.controls.enableZoom = true;
     this.controls.enablePan = false;
     this.controls.maxPolarAngle = Math.PI / 2;
+    this.controls.disable;
     
     var light = new THREE.PointLight(0xffffff, 0.8);
     this.camera.add(light);
@@ -159,10 +182,10 @@ export class App {
     this.world = new CANNON.World();
     this.world.gravity.set(0,0,0);
     this.world.broadphase = new CANNON.NaiveBroadphase();
-    this.world.solver.iterations = 1;
+    this.world.solver.iterations = 10;
 
     this.world.defaultContactMaterial.contactEquationStiffness = 1e6;
-    this.world.defaultContactMaterial.contactEquationRelaxation = 10;
+    this.world.defaultContactMaterial.contactEquationRelaxation = 1;
 
     var groundShape = new CANNON.Plane();
     var groundBody = new CANNON.Body({ mass: 0 });
@@ -230,7 +253,7 @@ export class App {
     
     if (individOperation.IsRunt) {
       individBox = new THREE.CylinderGeometry(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
-      let shape = new CANNON.Cylinder(-0.01 + individOperation.Bredd / 2, -0.01 + individOperation.Bredd / 2, individOperation.Langd, 24);
+      let shape = new CANNON.Cylinder(individOperation.Bredd / 2, individOperation.Bredd / 2, individOperation.Langd, 24);
       physicObj = new CANNON.Body({ mass: 1 });
       physicObj.fixedRotation = true;
       physicObj.addShape(shape);
@@ -287,12 +310,14 @@ export class App {
 
       me.world.step(me.timeStep);
     });
+    me.dragControls.addEventListener('dragend', function (e) {me.moveEndCallback(e)});
+
   }
 
   private moveStartCallback = (event, me) => {
     me.originPoint = event.object.position.clone();
     //me.parent.setIsDirty(true); //tala om att vyn är dirty ifall en individ har flyttats       
-    //this.controls.enabled = false; //så man ej kan flytta ugnen när man flyttar en individ
+    this.controls.enabled = false; //så man ej kan flytta ugnen när man flyttar en individ
     
     //if (me.selectedMeshIndivid != event.object)
     //me.setSelectedIndivid(event.object, null);
@@ -301,15 +326,14 @@ export class App {
   private moveCallback = (event) => {
     this.checkWallCollision(event.object);
   }
-  
+  */
   
   private moveEndCallback = (event) => {
     this.controls.enabled = true;
     
-    this.checkObjectCollisions(event.object, 0);
   }
   
-  
+  /*
   public setSelectedIndivid(mesh: THREE.Mesh, individOperation: Contract.IndividOperation) {
     this.clearSelectedIndividInUgn();
     
